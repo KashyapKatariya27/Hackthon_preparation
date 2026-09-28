@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Finance Buddy – Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F2F5F9;--card:#fff;--line:#E1E7EF;--ink:#172033;--muted:#5F6B7F;--primary:#2F4BD8;--in:#12805C;--out:#C8442F}
+*{box-sizing:border-box;margin:0}
+body{font-family:Manrope,system-ui,Segoe UI,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+.app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+aside{background:var(--ink);color:#fff;padding:28px 20px;position:sticky;top:0;height:100vh}
+.brand{font-weight:800;font-size:1.25rem;margin-bottom:32px}
+nav a{display:block;color:#B8C2D6;text-decoration:none;padding:10px 12px;border-radius:8px;font-weight:600}
+nav a:hover,nav a.on{background:#24314D;color:#fff}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #8FA2FF;outline-offset:2px}
+main{padding:32px;max-width:1100px;width:100%}
+h1{font-size:1.6rem;font-weight:800}
+.sub{color:var(--muted);margin-bottom:24px}
+.hero{background:var(--primary);color:#fff;border-radius:16px;padding:28px;display:flex;flex-wrap:wrap;gap:24px;justify-content:space-between;align-items:flex-end;margin-bottom:20px}
+.hero .big{font-size:2.8rem;font-weight:800;line-height:1.1}
+.hero small{display:block;opacity:.8;font-weight:600}
+.pair{display:flex;gap:32px}
+.pair b{font-size:1.3rem;display:block}
+.grid{display:grid;grid-template-columns:1.4fr 1fr;gap:20px;margin-bottom:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+h2{font-size:1.05rem;font-weight:800;margin-bottom:14px}
+.bar{margin-bottom:12px}
+.bar div:first-child{display:flex;justify-content:space-between;font-weight:600;font-size:.92rem}
+.track{background:#EAEEF5;border-radius:6px;height:10px;margin-top:4px}
+.fill{background:var(--primary);height:100%;border-radius:6px}
+form{display:grid;gap:10px}
+label{font-size:.85rem;font-weight:600;color:var(--muted);display:grid;gap:4px}
+input,select{font:inherit;padding:10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button.add{font:inherit;font-weight:800;background:var(--ink);color:#fff;border:0;border-radius:8px;padding:12px;cursor:pointer}
+button.add:hover{background:#24314D}
+.legend{display:flex;gap:16px;font-size:.85rem;color:var(--muted);margin-bottom:8px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
+svg{width:100%;height:auto;display:block}
+svg text{font:600 11px Manrope,sans-serif;fill:var(--muted)}
+.tx{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.tx:first-of-type{border-top:0}
+.tx .t{flex:1}
+.tx .t b{display:block}
+.tx .t span{font-size:.85rem;color:var(--muted)}
+.amt{font-weight:800}
+.amt.income{color:var(--in)}.amt.expense{color:var(--out)}
+.del{background:none;border:0;color:var(--muted);font-size:1.3rem;cursor:pointer;padding:4px 8px;border-radius:6px}
+.del:hover{color:var(--out);background:#FBEDEA}
+.empty{color:var(--muted);padding:12px 0}
+@media(max-width:800px){
+ .app{grid-template-columns:1fr}
+ aside{position:static;height:auto;padding:16px}
+ .brand{margin-bottom:10px}
+ nav{display:flex;gap:6px;overflow-x:auto}
+ nav a{white-space:nowrap}
+ main{padding:20px 16px}
+ .grid{grid-template-columns:1fr}
+ .hero .big{font-size:2.2rem}
+}
+</style>
+</head>
+<body>
+<div class="app">
+ <aside>
+  <div class="brand">Finance Buddy</div>
+  <nav aria-label="Main">
+   <a href="#overview" class="on">Overview</a>
+   <a href="#add">Add transaction</a>
+   <a href="#trend">Monthly trend</a>
+   <a href="#history">History</a>
+  </nav>
+ </aside>
+
+ <main id="overview">
+  <h1>Overview</h1>
+  <p class="sub" id="monthLabel"></p>
+
+  <section class="hero" aria-label="Summary">
+   <div><small>Total balance</small><div class="big" id="balance"></div></div>
+   <div class="pair">
+    <div><small>Income this month</small><b id="inc"></b></div>
+    <div><small>Spent this month</small><b id="exp"></b></div>
+   </div>
+  </section>
+
+  <div class="grid">
+   <section class="card" aria-labelledby="h-cat">
+    <h2 id="h-cat">Spending by category this month</h2>
+    <div id="cats"></div>
+   </section>
+
+   <section class="card" id="add" aria-labelledby="h-add">
+    <h2 id="h-add">Add transaction</h2>
+    <form id="form">
+     <label>Title<input id="title" required maxlength="40" placeholder="e.g. Canteen lunch"></label>
+     <div class="row2">
+      <label>Amount (₹)<input id="amount" type="number" min="1" step="1" required></label>
+      <label>Date<input id="date" type="date" required></label>
+     </div>
+     <div class="row2">
+      <label>Type
+       <select id="type"><option value="expense">Expense</option><option value="income">Income</option></select>
+      </label>
+      <label>Category
+       <select id="cat"></select>
+      </label>
+     </div>
+     <button class="add" type="submit">Add transaction</button>
+    </form>
+   </section>
+  </div>
+
+  <section class="card" id="trend" style="margin-bottom:20px" aria-labelledby="h-trend">
+   <h2 id="h-trend">Last 6 months</h2>
+   <div class="legend"><span><i class="dot" style="background:var(--in)"></i>Income</span><span><i class="dot" style="background:var(--out)"></i>Spent</span></div>
+   <div id="chart"></div>
+  </section>
+
+  <section class="card" id="history" aria-labelledby="h-hist">
+   <h2 id="h-hist">History</h2>
+   <div id="list"></div>
+  </section>
+ </main>
+</div>
+
+<script>
+const KEY = 'finance-buddy-tx';
+const CATS = ['Food','Travel','Study','Rent','Shopping','Fun','Allowance','Other'];
+const inr = n => '₹' + Math.round(n).toLocaleString('en-IN');
+const esc = s => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $ = id => document.getElementById(id);
+
+function daysAgo(n){ const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString().slice(0,10); }
+function seed(){
+  return [
+    {id:1,title:'Monthly allowance',amount:12000,type:'income',cat:'Allowance',date:daysAgo(1)},
+    {id:2,title:'Canteen lunch',amount:180,type:'expense',cat:'Food',date:daysAgo(2)},
+    {id:3,title:'Metro card recharge',amount:500,type:'expense',cat:'Travel',date:daysAgo(4)},
+    {id:4,title:'Course subscription',amount:1499,type:'expense',cat:'Study',date:daysAgo(6)},
+    {id:5,title:'Movie with friends',amount:650,type:'expense',cat:'Fun',date:daysAgo(8)},
+    {id:6,title:'Freelance project',amount:4000,type:'income',cat:'Other',date:daysAgo(33)},
+    {id:7,title:'Hostel rent',amount:5000,type:'expense',cat:'Rent',date:daysAgo(36)},
+    {id:8,title:'Books',amount:900,type:'expense',cat:'Study',date:daysAgo(40)},
+    {id:9,title:'Monthly allowance',amount:12000,type:'income',cat:'Allowance',date:daysAgo(62)},
+    {id:10,title:'Groceries',amount:1300,type:'expense',cat:'Food',date:daysAgo(66)},
+    {id:11,title:'New headphones',amount:2200,type:'expense',cat:'Shopping',date:daysAgo(95)}
+  ];
+}
+
+let tx;
+try { tx = JSON.parse(localStorage.getItem(KEY)); } catch(e) {}
+if (!Array.isArray(tx)) tx = seed();
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(tx)); } catch(e) {} };
+
+const ym = d => d.slice(0,7);
+const nowYM = ym(new Date().toISOString());
+
+function render(){
+  const sum = (arr, type) => arr.filter(t => t.type === type).reduce((s,t) => s + t.amount, 0);
+  const month = tx.filter(t => ym(t.date) === nowYM);
+
+  $('monthLabel').textContent = new Date().toLocaleDateString('en-IN', {month:'long', year:'numeric'});
+  $('balance').textContent = inr(sum(tx,'income') - sum(tx,'expense'));
+  $('inc').textContent = inr(sum(month,'income'));
+  $('exp').textContent = inr(sum(month,'expense'));
+
+  // Categories
+  const byCat = {};
+  month.filter(t => t.type === 'expense').forEach(t => byCat[t.cat] = (byCat[t.cat] || 0) + t.amount);
+  const entries = Object.entries(byCat).sort((a,b) => b[1] - a[1]);
+  const max = entries.length ? entries[0][1] : 1;
+  $('cats').innerHTML = entries.length
+    ? entries.map(([c,v]) => `<div class="bar"><div><span>${c}</span><span>${inr(v)}</span></div><div class="track"><div class="fill" style="width:${v/max*100}%"></div></div></div>`).join('')
+    : '<p class="empty">No spending this month yet. Add an expense to see it here.</p>';
+
+  // 6-month chart
+  const months = [];
+  const now = new Date();
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2,'0');
+    const list = tx.filter(t => ym(t.date) === key);
+    months.push({label: d.toLocaleDateString('en-IN',{month:'short'}), inc: sum(list,'income'), exp: sum(list,'expense')});
+  }
+  const top = Math.max(1, ...months.flatMap(m => [m.inc, m.exp]));
+  const H = 150, slot = 100;
+  $('chart').innerHTML = `<svg viewBox="0 0 600 180" role="img" aria-label="Income and spending for the last 6 months">` +
+    months.map((m,i) => {
+      const x = i * slot + 20, hi = m.inc / top * H, he = m.exp / top * H;
+      return `<rect x="${x}" y="${H-hi}" width="28" height="${hi}" rx="4" fill="#12805C"><title>${m.label} income ${inr(m.inc)}</title></rect>
+              <rect x="${x+32}" y="${H-he}" width="28" height="${he}" rx="4" fill="#C8442F"><title>${m.label} spent ${inr(m.exp)}</title></rect>
+              <text x="${x+30}" y="170" text-anchor="middle">${m.label}</text>`;
+    }).join('') + `<line x1="0" y1="${H}" x2="600" y2="${H}" stroke="#E1E7EF"/></svg>`;
+
+  // History
+  const sorted = [...tx].sort((a,b) => b.date.localeCompare(a.date) || b.id - a.id);
+  $('list').innerHTML = sorted.length ? sorted.map(t => `
+    <div class="tx">
+      <div class="t"><b>${esc(t.title)}</b><span>${t.cat} · ${new Date(t.date).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</span></div>
+      <div class="amt ${t.type}">${t.type === 'income' ? '+' : '−'}${inr(t.amount)}</div>
+      <button class="del" data-id="${t.id}" aria-label="Delete ${esc(t.title)}">×</button>
+    </div>`).join('') : '<p class="empty">No transactions yet. Add your first one above.</p>';
+}
+
+// Form
+$('cat').innerHTML = CATS.map(c => `<option>${c}</option>`).join('');
+$('date').value = daysAgo(0);
+
+$('form').addEventListener('submit', e => {
+  e.preventDefault();
+  tx.push({
+    id: Date.now(),
+    title: $('title').value.trim(),
+    amount: Number($('amount').value),
+    type: $('type').value,
+    cat: $('cat').value,
+    date: $('date').value
+  });
+  save(); render();
+  e.target.reset(); $('date').value = daysAgo(0);
+  $('title').focus();
+});
+
+$('list').addEventListener('click', e => {
+  const btn = e.target.closest('.del');
+  if (!btn) return;
+  tx = tx.filter(t => String(t.id) !== btn.dataset.id);
+  save(); render();
+});
+
+render();
+</script>
+</body>
+</html>
